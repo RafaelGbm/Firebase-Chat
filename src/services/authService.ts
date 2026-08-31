@@ -7,6 +7,7 @@ import {
   sendEmailVerification,
   signInWithCredential,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
   type User,
@@ -141,7 +142,25 @@ export async function signInWithEmail({ email, password }: EmailSignInInput): Pr
   return mapFirebaseUser(credential.user);
 }
 
-/** Login com Google a partir do `id_token` obtido pelo expo-auth-session. */
+/**
+ * Login com Google na web.
+ *
+ * Usa o fluxo hospedado pelo proprio Firebase (`signInWithPopup`), que valida
+ * a origem pelos dominios autorizados do projeto -- por isso nao exige client
+ * ID nem redirect URI cadastrados a mao no Google Cloud Console.
+ *
+ * Esta funcao so existe no bundle web do Firebase; no Android e no iOS o fluxo
+ * usado e o `signInWithGoogleIdToken`, alimentado pelo expo-auth-session.
+ */
+export async function signInWithGooglePopup(): Promise<ChatUser> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  const result = await signInWithPopup(auth, provider);
+  return mapFirebaseUser(result.user);
+}
+
+/** Login com Google no Android e no iOS, a partir do `id_token` do expo-auth-session. */
 export async function signInWithGoogleIdToken(idToken: string): Promise<ChatUser> {
   const credential = GoogleAuthProvider.credential(idToken);
   const result = await signInWithCredential(auth, credential);
