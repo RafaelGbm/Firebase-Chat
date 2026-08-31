@@ -455,7 +455,9 @@ Realtime Database. Não há como voltar ao chat sem autenticar novamente.
 
 ## Prints da aplicação
 
-> ⚠️ **PREENCHER ANTES DE ENTREGAR.** Coloque as capturas em `docs/prints/` e ajuste os caminhos.
+> Capturas do emulador Android (Pixel 9 Pro, Android 15). O print de chat registra a conversa entre a
+> conta de e-mail/senha (Android) e a conta Google (navegador) — as duas pontas que a regra entre
+> provedores exige —, com as mensagens sincronizadas em tempo real pelo Realtime Database.
 
 | Login | Contatos | Chat |
 | ----- | -------- | ---- |
