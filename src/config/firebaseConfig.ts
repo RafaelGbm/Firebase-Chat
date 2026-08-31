@@ -1,4 +1,5 @@
 import type { FirebaseOptions } from 'firebase/app';
+import { Platform } from 'react-native';
 
 import { ConfigurationError } from '../utils/errors';
 
@@ -42,9 +43,22 @@ export const googleClientIds: GoogleClientIds = {
   androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 };
 
-export const isGoogleSignInConfigured: boolean = Object.values(googleClientIds).some(
-  (clientId) => typeof clientId === 'string' && clientId.length > 0,
-);
+/**
+ * Client ID exigido pelo fluxo nativo da plataforma atual.
+ *
+ * Cada plataforma precisa do SEU proprio client: um client Web nao aceita o
+ * redirect `exp://` gerado no Android/iOS, entao reaproveita-lo ali levaria a
+ * um `redirect_uri_mismatch` na cara do usuario.
+ */
+export const nativeGoogleClientId: string | undefined = Platform.select({
+  android: googleClientIds.androidClientId,
+  ios: googleClientIds.iosClientId,
+  default: undefined,
+});
+
+/** `true` quando a plataforma atual tem o client ID nativo necessario. */
+export const isNativeGoogleSignInConfigured: boolean =
+  typeof nativeGoogleClientId === 'string' && nativeGoogleClientId.length > 0;
 
 function collectMissingKeys(): RequiredEnvKey[] {
   return REQUIRED_ENV_KEYS.filter((key) => {
