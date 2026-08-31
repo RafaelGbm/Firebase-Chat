@@ -1,0 +1,69 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["provider"],
+
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['uid', 'name', 'provider', 'createdAt', 'updatedAt'])",
+
+        "uid":       { ".validate": "newData.isString() && newData.val() === $uid" },
+        "name":      { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+        "email":     { ".validate": "newData.isString() && newData.val().length <= 254" },
+        "provider":  { ".validate": "newData.isString() && (newData.val() === 'password' || newData.val() === 'google' || newData.val() === 'apple')" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "$other":    { ".validate": false }
+      }
+    },
+
+    "conversations": {
+      "$conversationId": {
+        ".read": "auth != null && ($conversationId.beginsWith(auth.uid + '_') || $conversationId.endsWith('_' + auth.uid))",
+        ".write": "auth != null && !data.exists() && ($conversationId.beginsWith(auth.uid + '_') || $conversationId.endsWith('_' + auth.uid))",
+        ".validate": "newData.hasChildren(['id', 'participants', 'createdAt']) && newData.child('id').val() === $conversationId",
+
+        "id":        { ".validate": "newData.isString()" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+
+        "participants": {
+          ".validate": "newData.hasChildren(['0', '1']) && !newData.hasChild('2') && $conversationId === newData.child('0').val() + '_' + newData.child('1').val()",
+
+          "0": {
+            ".validate": "newData.isString() && newData.val() !== newData.parent().child('1').val() && root.child('users').child(newData.val()).exists() && root.child('users').child(newData.parent().child('1').val()).exists() && (root.child('users').child(newData.val()).child('provider').val() === 'password') !== (root.child('users').child(newData.parent().child('1').val()).child('provider').val() === 'password')"
+          },
+          "1": {
+            ".validate": "newData.isString()"
+          },
+          "$other": { ".validate": false }
+        },
+
+        "$other": { ".validate": false }
+      }
+    },
+
+    "messages": {
+      "$conversationId": {
+        ".read": "auth != null && ($conversationId.beginsWith(auth.uid + '_') || $conversationId.endsWith('_' + auth.uid))",
+        ".indexOn": ["createdAt"],
+
+        "$messageId": {
+          ".write": "auth != null && !data.exists() && ($conversationId.beginsWith(auth.uid + '_') || $conversationId.endsWith('_' + auth.uid))",
+          ".validate": "newData.hasChildren(['id', 'conversationId', 'senderId', 'receiverId', 'text', 'createdAt']) && root.child('conversations').child($conversationId).exists()",
+
+          "id":             { ".validate": "newData.isString() && newData.val() === $messageId" },
+          "conversationId": { ".validate": "newData.isString() && newData.val() === $conversationId" },
+          "senderId":       { ".validate": "newData.isString() && newData.val() === auth.uid && (root.child('conversations').child($conversationId).child('participants').child('0').val() === newData.val() || root.child('conversations').child($conversationId).child('participants').child('1').val() === newData.val())" },
+          "receiverId":     { ".validate": "newData.isString() && newData.val() !== newData.parent().child('senderId').val() && (root.child('conversations').child($conversationId).child('participants').child('0').val() === newData.val() || root.child('conversations').child($conversationId).child('participants').child('1').val() === newData.val())" },
+          "text":           { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000" },
+          "createdAt":      { ".validate": "newData.isNumber()" },
+          "$other":         { ".validate": false }
+        }
+      }
+    }
+  }
+}
