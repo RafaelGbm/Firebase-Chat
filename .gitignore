@@ -45,3 +45,6 @@ yarn-error.*
 
 # expo export
 .expo-export*
+
+# Configuracao local de ferramentas
+.claude/
