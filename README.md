@@ -211,16 +211,46 @@ Crie-os em **Google Cloud Console → APIs e serviços → Credenciais → ID do
 
 ### 5.6 Apple Sign-In
 
-1. Apple Developer → **Certificates, Identifiers & Profiles** → habilite **Sign in with Apple**
-   para o App ID `com.fiap.cpmobile.chat`.
-2. Firebase Console → Authentication → Apple → informe **Services ID**, **Team ID**, **Key ID** e
-   a chave `.p8`.
-3. O app já declara `ios.usesAppleSignIn: true` e o plugin `expo-apple-authentication` no
-   [`app.json`](app.json). É necessário um **development build** (o Expo Go não assina com o seu
-   App ID).
+> Exige uma conta paga do **Apple Developer Program**. Sem ela o provedor não pode ser habilitado
+> no Firebase — o código do app já está completo e passa a funcionar assim que a configuração
+> abaixo for concluída.
+
+**Mínimo necessário para este app** (Sign in with Apple nativo no iOS):
+
+1. Apple Developer → **Identifiers → App ID** — no App ID `com.fiap.cpmobile.chat`, marque a
+   capability **Sign in with Apple**.
+2. Firebase Console → Authentication → Sign-in method → **Apple** → ligue o **Enable** e salve.
+   Deixe **Services ID** e **OAuth code flow configuration** em branco — o próprio console os
+   rotula como *"not required for Apple"* e *"optional"*.
+
+É só isso. No fluxo nativo o `expo-apple-authentication` obtém o `identityToken` direto da Apple e
+o [`useAppleSignIn`](src/hooks/useAppleSignIn.ts) o entrega ao Firebase via `signInWithCredential`.
+O Firebase apenas **valida** esse token com as chaves públicas da Apple — ele não conduz nenhum
+fluxo OAuth, e por isso não precisa do Services ID nem da chave `.p8`.
+
+**Apenas se você também quiser Apple na web/Android, ou revogação de token:**
+
+3. Apple Developer → **Identifiers → Services ID** — crie um Services ID (ex.:
+   `com.fiap.cpmobile.chat.web`), marque **Sign in with Apple** e clique em *Configure*:
+   - **Primary App ID**: `com.fiap.cpmobile.chat`
+   - **Domains and Subdomains**: `cp-mobile-chat.firebaseapp.com`
+   - **Return URLs**: `https://cp-mobile-chat.firebaseapp.com/__/auth/handler`
+4. Apple Developer → **Keys** — crie uma chave com **Sign in with Apple** habilitado, associe ao
+   App ID e baixe o `.p8`. Ele **só pode ser baixado uma vez**. Anote o **Key ID**.
+5. Firebase Console → Apple → preencha o **Services ID** e, em **OAuth code flow configuration**,
+   o **Team ID**, o **Key ID** e a chave `.p8`. Esse caminho ainda exige que a Apple verifique a
+   propriedade do domínio.
+
+**No app** não há nada a fazer: o [`app.json`](app.json) já declara o plugin
+`expo-apple-authentication` e `ios.usesAppleSignIn: true`.
 
 O `nonce` é gerado no cliente: a Apple recebe o **SHA-256** do valor e o Firebase recebe o
 **valor bruto** — é assim que o backend confirma que o token não foi reutilizado.
+
+> O `expo-apple-authentication` está incluído no **Expo Go** em iOS, então o fluxo pode ser testado
+> sem development build — as credenciais devolvidas apenas diferem das de um build standalone.
+> O Sign in with Apple é uma API nativa da Apple: não existe em Android nem na web, e nessas
+> plataformas o botão aparece desabilitado com a justificativa na tela.
 
 ---
 
