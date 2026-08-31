@@ -18,6 +18,7 @@ import {
   signInWithApple as signInWithAppleService,
   signInWithEmail,
   signInWithGoogleIdToken,
+  signInWithGooglePopup,
   signOutCurrentUser,
   signUpWithEmail,
   type AppleSignInInput,
@@ -42,7 +43,10 @@ export type AuthContextValue = {
   reportError: (error: unknown) => void;
   signUp: (input: EmailSignUpInput) => Promise<boolean>;
   signIn: (input: EmailSignInInput) => Promise<boolean>;
+  /** Login com Google no Android e no iOS, a partir do `id_token` do provedor. */
   signInWithGoogle: (idToken: string) => Promise<boolean>;
+  /** Login com Google na web, pelo popup hospedado do Firebase. */
+  signInWithGoogleWeb: () => Promise<boolean>;
   signInWithApple: (input: AppleSignInInput) => Promise<boolean>;
   signOut: () => Promise<void>;
   /** Reenvia o link de confirmacao. Devolve `true` em caso de sucesso. */
@@ -179,6 +183,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     [runAuthAction],
   );
 
+  const signInWithGoogleWeb = useCallback(
+    (): Promise<boolean> =>
+      runAuthAction(async () => {
+        await signInWithGooglePopup();
+      }),
+    [runAuthAction],
+  );
+
   const signInWithApple = useCallback(
     (input: AppleSignInInput): Promise<boolean> =>
       runAuthAction(async () => {
@@ -241,6 +253,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       signUp,
       signIn,
       signInWithGoogle,
+      signInWithGoogleWeb,
       signInWithApple,
       signOut,
       resendVerification,
@@ -257,6 +270,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       signUp,
       signIn,
       signInWithGoogle,
+      signInWithGoogleWeb,
       signInWithApple,
       signOut,
       resendVerification,
