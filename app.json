@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "CP-Mobile",
+    "name": "Chat Firebase",
     "slug": "CP-Mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "cpmobilechat",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.fiap.cpmobile.chat",
+      "usesAppleSignIn": true
     },
     "android": {
+      "package": "com.fiap.cpmobile.chat",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +24,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-apple-authentication",
+      "expo-web-browser"
+    ]
   }
 }
