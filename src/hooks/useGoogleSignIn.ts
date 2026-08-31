@@ -1,18 +1,21 @@
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { googleClientIds, isGoogleSignInConfigured } from '../config/firebaseConfig';
 import { translateError } from '../utils/errors';
 import { useAuth } from './useAuth';
 
-// Fecha a janela do navegador assim que o fluxo OAuth retorna.
+// Fecha a janela do navegador assim que o fluxo OAuth retorna (Android/iOS).
 WebBrowser.maybeCompleteAuthSession();
 
+const IS_WEB = Platform.OS === 'web';
+
 export type GoogleSignInState = {
-  /** `true` quando existe pelo menos um client ID configurado. */
+  /** `true` quando o fluxo da plataforma atual esta pronto para ser usado. */
   isAvailable: boolean;
-  /** `true` enquanto o navegador de autorizacao ou o Firebase estao trabalhando. */
+  /** `true` enquanto o provedor ou o Firebase estao trabalhando. */
   isPending: boolean;
   /** Mensagem de indisponibilidade exibida ao usuario. */
   unavailableReason: string | null;
@@ -21,11 +24,17 @@ export type GoogleSignInState = {
 };
 
 /**
- * Fluxo de login com Google usando `expo-auth-session`. O `id_token` devolvido
- * pelo Google e trocado por uma credencial do Firebase Authentication.
+ * Login com Google, com um fluxo por plataforma:
+ *
+ * - **Web**: `signInWithPopup` do proprio Firebase. A origem e validada pelos
+ *   dominios autorizados do projeto, entao nao e preciso cadastrar client ID
+ *   nem redirect URI no Google Cloud Console.
+ * - **Android/iOS**: `expo-auth-session`, que devolve um `id_token` trocado por
+ *   uma credencial do Firebase. Aqui os client IDs sao obrigatorios, porque o
+ *   popup do Firebase nao existe fora do navegador.
  */
 export function useGoogleSignIn(): GoogleSignInState {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInWithGoogleWeb } = useAuth();
   const [isExchanging, setIsExchanging] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,9 +45,9 @@ export function useGoogleSignIn(): GoogleSignInState {
     androidClientId: googleClientIds.androidClientId,
   });
 
-  // Reage ao retorno do fluxo OAuth.
+  // Reage ao retorno do fluxo OAuth nativo. Na web nada disso e usado.
   useEffect(() => {
-    if (!response) {
+    if (IS_WEB || !response) {
       return;
     }
 
@@ -79,16 +88,25 @@ export function useGoogleSignIn(): GoogleSignInState {
   }, [response, signInWithGoogle]);
 
   const unavailableReason = useMemo<string | null>(() => {
-    if (!isGoogleSignInConfigured) {
-      return 'Defina EXPO_PUBLIC_GOOGLE_*_CLIENT_ID no arquivo .env para habilitar o Google.';
+    if (IS_WEB || isGoogleSignInConfigured) {
+      return null;
     }
 
-    return null;
+    return 'No Android e no iOS, defina EXPO_PUBLIC_GOOGLE_*_CLIENT_ID no arquivo .env.';
   }, []);
 
-  const signIn = useCallback(async (): Promise<void> => {
-    setError(null);
+  const signInOnWeb = useCallback(async (): Promise<void> => {
+    try {
+      setIsExchanging(true);
+      await signInWithGoogleWeb();
+    } catch (popupError: unknown) {
+      setError(translateError(popupError, 'Nao foi possivel entrar com o Google.'));
+    } finally {
+      setIsExchanging(false);
+    }
+  }, [signInWithGoogleWeb]);
 
+  const signInOnNative = useCallback(async (): Promise<void> => {
     if (!isGoogleSignInConfigured) {
       setError(unavailableReason);
       return;
@@ -103,6 +121,7 @@ export function useGoogleSignIn(): GoogleSignInState {
       setIsExchanging(true);
       const result = await promptAsync();
 
+      // No sucesso o efeito acima assume; nos demais casos encerramos o loading.
       if (result.type !== 'success') {
         setIsExchanging(false);
       }
@@ -112,8 +131,13 @@ export function useGoogleSignIn(): GoogleSignInState {
     }
   }, [promptAsync, request, unavailableReason]);
 
+  const signIn = useCallback(async (): Promise<void> => {
+    setError(null);
+    await (IS_WEB ? signInOnWeb() : signInOnNative());
+  }, [signInOnNative, signInOnWeb]);
+
   return {
-    isAvailable: isGoogleSignInConfigured && request !== null,
+    isAvailable: IS_WEB || (isGoogleSignInConfigured && request !== null),
     isPending: isExchanging,
     unavailableReason,
     error,
