@@ -89,6 +89,12 @@ O Sign in with Apple é uma API nativa da Apple e só existe em iOS 13+. Nas dem
 botão continua visível, porém desabilitado e com a justificativa exibida na tela — como pede o
 enunciado ("respeitar a disponibilidade de cada plataforma").
 
+> **O login com Google no Android exige um development build.** No Expo Go o retorno do OAuth é
+> entregue ao package `host.exp.exponent`, e não a `com.fiap.cpmobile.chat`, então o fluxo falha.
+> Para avaliar o login com Google sem gerar um build, use a **versão web** (`npm run web`), onde
+> ele funciona pelo `signInWithPopup` do próprio Firebase. O login com e-mail e senha funciona
+> normalmente no Expo Go, em Android e iOS.
+
 ---
 
 ## Instruções para execução
