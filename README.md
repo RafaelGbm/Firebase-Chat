@@ -11,14 +11,11 @@ Aplicativo de chat **1 para 1** em React Native + Expo + TypeScript, com autenti
 
 ## Integrantes
 
-> ⚠️ **PREENCHER ANTES DE ENTREGAR.** O trabalho recebe nota ZERO se esta seção não contiver
-> o nome completo e o RM de todos os integrantes (máximo de 5).
-
-- RM00000 - Nome Completo do Integrante 1
-- RM00000 - Nome Completo do Integrante 2
-- RM00000 - Nome Completo do Integrante 3
-- RM00000 - Nome Completo do Integrante 4
-- RM00000 - Nome Completo do Integrante 5
+- RM555088 - Vinicius Monteiro Araújo
+- RM555180 - Guilherme Almeida
+- RM558644 - Rafael Duarte de Freitas
+- RM557228 - Rafael Gaspar Bragança Martins
+- RM558358 - Luiz Gustavo da Silva
 
 ---
 
