@@ -177,21 +177,37 @@ padrão (`".read": false` / `".write": false`).
 
 ### 5.5 Google Sign-In
 
-**Google Cloud Console → APIs e serviços → Credenciais → Criar credenciais → ID do cliente OAuth**.
-Crie um client para cada plataforma que for usar e preencha:
+O login com Google usa **um fluxo diferente por plataforma**, implementado em
+[`useGoogleSignIn.ts`](src/hooks/useGoogleSignIn.ts):
+
+| Plataforma  | Fluxo | O que precisa ser configurado |
+| ----------- | ----- | ----------------------------- |
+| Web         | `signInWithPopup` do Firebase | Nada além de habilitar o Google no Firebase |
+| Android/iOS | `expo-auth-session` + `signInWithCredential` | OAuth Client IDs no Google Cloud Console |
+
+**Na web** o Firebase valida a origem pelos **domínios autorizados** do projeto
+(*Authentication → Settings → Authorized domains*), que já incluem `localhost` por padrão. Não é
+preciso cadastrar client ID nem redirect URI: basta habilitar o provedor Google em
+*Authentication → Sign-in method*.
+
+**No Android e no iOS** o popup do Firebase não existe, então o app usa o `expo-auth-session` para
+obter um `id_token` do Google e trocá-lo por uma credencial do Firebase. Aí sim são necessários os
+client IDs:
 
 ```env
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=...
 EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=...
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=...
 ```
+
+Crie-os em **Google Cloud Console → APIs e serviços → Credenciais → ID do cliente OAuth**:
 
 - O **iOS client** usa o bundle identifier `com.fiap.cpmobile.chat`.
 - O **Android client** usa o package `com.fiap.cpmobile.chat` + a SHA-1 do keystore de debug.
-- No **Expo Go** o redirect é um URI do próprio Expo; para o fluxo nativo completo, use um
-  development build (`npx expo run:android` / `npx expo run:ios`).
-- Se nenhum client ID for informado, o botão do Google aparece desabilitado com a instrução na
-  tela — nada quebra.
+- O redirect URI gerado pelo Expo na web é `http://localhost:8081` (sem barra no final), caso
+  você prefira usar o `expo-auth-session` também no navegador.
+- Se os client IDs não forem informados, o botão do Google fica desabilitado no Android/iOS com a
+  instrução na tela — a web continua funcionando normalmente.
 
 ### 5.6 Apple Sign-In
 
