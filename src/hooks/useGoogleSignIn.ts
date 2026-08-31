@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { googleClientIds, isGoogleSignInConfigured } from '../config/firebaseConfig';
+import { googleClientIds, isNativeGoogleSignInConfigured } from '../config/firebaseConfig';
 import { translateError } from '../utils/errors';
 import { useAuth } from './useAuth';
 
@@ -88,11 +88,13 @@ export function useGoogleSignIn(): GoogleSignInState {
   }, [response, signInWithGoogle]);
 
   const unavailableReason = useMemo<string | null>(() => {
-    if (IS_WEB || isGoogleSignInConfigured) {
+    if (IS_WEB || isNativeGoogleSignInConfigured) {
       return null;
     }
 
-    return 'No Android e no iOS, defina EXPO_PUBLIC_GOOGLE_*_CLIENT_ID no arquivo .env.';
+    return Platform.OS === 'ios'
+      ? 'Defina EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID no arquivo .env para habilitar o Google no iOS.'
+      : 'Defina EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID no arquivo .env para habilitar o Google no Android.';
   }, []);
 
   const signInOnWeb = useCallback(async (): Promise<void> => {
@@ -107,7 +109,7 @@ export function useGoogleSignIn(): GoogleSignInState {
   }, [signInWithGoogleWeb]);
 
   const signInOnNative = useCallback(async (): Promise<void> => {
-    if (!isGoogleSignInConfigured) {
+    if (!isNativeGoogleSignInConfigured) {
       setError(unavailableReason);
       return;
     }
@@ -137,7 +139,7 @@ export function useGoogleSignIn(): GoogleSignInState {
   }, [signInOnNative, signInOnWeb]);
 
   return {
-    isAvailable: IS_WEB || (isGoogleSignInConfigured && request !== null),
+    isAvailable: IS_WEB || (isNativeGoogleSignInConfigured && request !== null),
     isPending: isExchanging,
     unavailableReason,
     error,
